@@ -28,21 +28,6 @@ logger = logging.getLogger(__file__)
 config = get_config()
 
 
-def exp_class_working_dir(meth):
-    @wraps(meth)
-    def new_meth(self, *args, **kwargs):
-        try:
-            orig_path = os.getcwd()
-            new_path = os.path.dirname(
-                sys.modules[self.__class__.__module__].__file__
-            )
-            os.chdir(new_path)
-            return meth(self, *args, **kwargs)
-        finally:
-            os.chdir(orig_path)
-    return new_meth
-
-
 class Experiment(object):
     """Define the structure of an experiment."""
     app_id = None
