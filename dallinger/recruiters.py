@@ -222,8 +222,6 @@ class MTurkRecruiterException(Exception):
 class MTurkRecruiter(object):
     """Recruit participants from Amazon Mechanical Turk"""
 
-    _mturk_connection = None
-
     @classmethod
     def from_current_config(cls):
         config = get_config()
