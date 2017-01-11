@@ -52,6 +52,7 @@ class Experiment(object):
         """Create the experiment class. Sets the default value of attributes."""
         from dallinger.recruiters import HotAirRecruiter
         from dallinger.recruiters import PsiTurkRecruiter
+        from dallinger.recruiters import MTurkRecruiter
 
         #: Boolean, determines whether the experiment logs output when
         #: running. Default is True.
@@ -77,7 +78,8 @@ class Experiment(object):
         if config.get('mode') == 'debug':
             self.recruiter = HotAirRecruiter
         else:
-            self.recruiter = PsiTurkRecruiter
+            # self.recruiter = PsiTurkRecruiter
+            self.recruiter = MTurkRecruiter.from_current_config
 
         #: int, the number of participants
         #: requested when the experiment first starts. Default is 1.

@@ -1,19 +1,18 @@
 [AWS Access]
-aws_access_key_id = ???
-aws_secret_access_key = ???
-aws_region = us-east-1
+aws_access_key_id = AKIAJGSK4KWVDGAFSSGA
+aws_secret_access_key = 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
 
 [psiTurk Access]
 psiturk_access_key_id = ???
 psiturk_secret_access_id = ???
 
 [Heroku Access]
-heroku_email_address = ???
-heroku_password = ???
+heroku_email_address = jesse@rasikaconsulting.com
+heroku_password = Ej8qkPQ$L#T6atceHyRJ
 
 [Email Access]
-dallinger_email_address = ???
-dallinger_email_password = ???
+dallinger_email_address = jesse@rasikaconsulting.com
+dallinger_email_password = secret?
 
 [Task Parameters]
 experiment_code_version = 1.0
