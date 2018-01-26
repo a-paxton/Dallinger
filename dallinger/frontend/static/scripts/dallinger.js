@@ -172,7 +172,7 @@ var submit_assignment = function () {
 var create_participant = function() {
     var url;
 
-    (new Fingerprint2()).getSync().get(function(result){
+    new Fingerprint2().get(function(result){
       fingerprint_hash = result;
       store.set("fingerprint_hash", fingerprint_hash)
     });
