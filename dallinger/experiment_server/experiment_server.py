@@ -582,29 +582,29 @@ def create_participant(worker_id, hit_id, assignment_id, mode):
     defined in reference to the participant object. You must specify the
     worker_id, hit_id, assignment_id, and mode in the url.
     """
-    fingerprint_hash = request.args.get('fingerprint_hash')
-    try:
-        fingerprint_found = models.Participant.query.\
-            filter_by(fingerprint_hash=fingerprint_hash).one_or_none()
-    except MultipleResultsFound:
-        fingerprint_found = True
-
-    if fingerprint_found:
-        db.logger.warning("Same browser fingerprint detected.")
-
-        if mode == 'live':
-            return error_response(
-                error_type="/participant POST: Same participant dectected.",
-                status=403)
-
-    already_participated = models.Participant.query.\
-        filter_by(worker_id=worker_id).one_or_none()
-
-    if already_participated:
-        db.logger.warning("Worker has already participated.")
-        return error_response(
-            error_type="/participant POST: worker has already participated.",
-            status=403)
+    # fingerprint_hash = request.args.get('fingerprint_hash')
+    # try:
+    #     fingerprint_found = models.Participant.query.\
+    #         filter_by(fingerprint_hash=fingerprint_hash).one_or_none()
+    # except MultipleResultsFound:
+    #     fingerprint_found = True
+    #
+    # if fingerprint_found:
+    #     db.logger.warning("Same browser fingerprint detected.")
+    #
+    #     if mode == 'live':
+    #         return error_response(
+    #             error_type="/participant POST: Same participant dectected.",
+    #             status=403)
+    #
+    # already_participated = models.Participant.query.\
+    #     filter_by(worker_id=worker_id).one_or_none()
+    #
+    # if already_participated:
+    #     db.logger.warning("Worker has already participated.")
+    #     return error_response(
+    #         error_type="/participant POST: worker has already participated.",
+    #         status=403)
 
     duplicate = models.Participant.query.\
         filter_by(
