@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <div class="main_div">
+        <h1>Instructions</h1>
+
+        <hr>
+
+        <p>In this experiment, you will play the game Concentration. Your goal is to find all the matching pairs of identical cards. Once you a find a matching pair, click each card in the pair one after the next, which will make that pair permanently visible. Then try to find the next matching pair.</p>
+
+        <hr>
+
+        <div>
+            <div class="row">
+                <div class="col-xs-10"></div>
+                <div class="col-xs-2">
+                    <button type="button" class="btn btn-success btn-lg" onClick="dallinger.goToPage('exp');">
+                    Begin</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        dallinger.createParticipant();
+    </script>
+{% endblock %}

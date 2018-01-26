@@ -1,21 +1,13 @@
 """Install Dallinger as a command line utility."""
 
+import os
 from setuptools import setup
-
-try:
-    with open('README.rst', 'r') as file:
-        long_description = file.read()
-
-except (OSError, IOError) as e:
-    with open('README.md', 'r') as file:
-        long_description = file.read()
 
 setup_args = dict(
     name='dallinger',
     packages=['dallinger'],
-    version="2.7.0",
+    version="3.4.1",
     description='Laboratory automation for the behavioral and social sciences',
-    long_description=long_description,
     url='http://github.com/Dallinger/Dallinger',
     maintainer='Jordan Suchow',
     maintainer_email='suchow@berkeley.edu',
@@ -35,8 +27,25 @@ setup_args = dict(
         'console_scripts': [
             'dallinger = dallinger.command_line:dallinger',
         ],
+        'dallinger.experiments': [],
+    },
+    extras_require={
+        'data': [
+            "networkx==1.11",
+            "odo==0.5.0",
+            "tablib==0.11.3"
+        ],
     }
 )
+
+# If not on Heroku, install setuptools-markdown.
+try:
+    os.environ["DYNO"]
+except KeyError:
+    setup_args.update({
+        "setup_requires": ['setuptools-markdown==0.2'],
+        "long_description_markdown_filename": 'README.md',
+    })
 
 # Read in requirements.txt for dependencies.
 setup_args['install_requires'] = install_requires = []

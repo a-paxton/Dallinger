@@ -1,5 +1,5 @@
 Dallinger
-~~~~~~~
+~~~~~~~~~
 
 Laboratory automation for the behavioral and social sciences.
 
@@ -11,10 +11,15 @@ Laboratory automation for the behavioral and social sciences.
     dallinger_with_anaconda
     aws_etc_keys
     demoing_dallinger
+    running_bots
     learning_to_use_dallinger
     monitoring_a_live_experiment
     postico_and_postgres
     command_line_utility
+    configuration
+    python_module
+    registration_on_OSF
+    troubleshooting
 
 .. toctree::
     :maxdepth: 1
@@ -28,12 +33,14 @@ Laboratory automation for the behavioral and social sciences.
     :caption: Developer documentation
 
     developing_dallinger_setup_guide
+    docker_setup
     running_the_tests
     required_experimental_files
     classes
     the_experiment_class
     web_api
     communicating_with_the_server
+    extra_configuration
 
 .. toctree::
     :maxdepth: 1

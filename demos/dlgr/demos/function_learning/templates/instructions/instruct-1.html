@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <div class="main_div">
+    	<h1>Instructions</h1>
+
+    	<hr>
+
+        <p>In the game, there are two bars &mdash; blue and red.</p>
+
+        <img id="blue-bar" src="/static/images/blue-bar.jpg" width="200px" alt="Blue bar" />
+        <img id="red-bar" src="/static/images/red-bar.jpg" width="22px" alt="Red bar" />
+
+
+    	<hr>
+
+        <button type="button" class="btn btn-primary btn-lg" onClick="dallinger.goToPage('instructions/instruct-2');" style="float: right;">Next
+        </button>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        dallinger.createParticipant();
+    </script>
+{% endblock %}

@@ -16,9 +16,9 @@ Miscellaneous routes
 
     GET /ad_address/<mode>/<hit_id>
 
-Used to get the address of the experiment on the psiTurk server and to return
+Used to get the address of the experiment on the gunicorn server and to return
 participants to Mechanical Turk upon completion of the experiment. This route
-is pinged automatically by the function ``submitAssignment`` in dallinger.js.
+is pinged automatically by the function ``submitAssignment`` in dallinger2.js.
 
 ::
 
@@ -47,6 +47,9 @@ Experiment routes
     GET /experiment/<property>
 
 Returns the value of the requested property as a JSON ``<property>``.
+The property must be a key in the ``experiment.public_properties``
+mapping and be JSON serializable. Experiments have no public properties
+by default.
 
 ::
 

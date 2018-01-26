@@ -1,0 +1,36 @@
+from dallinger.config import get_config
+from dallinger.experiment import Experiment
+
+config = get_config()
+
+
+class TestExperiment(Experiment):
+
+    def __init__(self, session=None):
+        try:
+            super(TestExperiment, self).__init__(session)
+        except TypeError:
+            self.practice_repeats = 0
+            self.verbose = True
+            if session:
+                self.session = session
+                self.configure()
+        self.experiment_repeats = 1
+        self.quorum = 1
+        if session:
+            self.setup()
+
+    @property
+    def public_properties(self):
+        return {
+            'exists': True,
+        }
+
+    def create_network(self):
+        """Return a new network."""
+        from dallinger.networks import Star
+        return Star(max_size=2)
+
+
+def extra_parameters():
+    config.register('custom_parameter', int, [])

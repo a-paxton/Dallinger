@@ -40,7 +40,7 @@ def make_demo(name, src, dst):
         shutil.copytree(src, os.path.join(tempdir, name))
 
         # remove unnecessary files
-        extra = [".psiturk_history", "snapshots", "server.log"]
+        extra = ["snapshots", "server.log"]
         for filename in extra:
             path = os.path.join(tempdir, name, filename)
             if os.path.exists(path):
@@ -69,7 +69,7 @@ def build(root):
     if not os.path.exists(os.path.join(root, "demos")):
         os.makedirs(os.path.join(root, "demos"))
 
-    demos_dir = os.path.abspath(os.path.join(root, "..", "..", "demos"))
+    demos_dir = os.path.abspath(os.path.join(root, "..", "..", "demos", "dlgr", "demos"))
     static_files = []
     for demo in os.listdir(demos_dir):
         src = os.path.join(demos_dir, demo)

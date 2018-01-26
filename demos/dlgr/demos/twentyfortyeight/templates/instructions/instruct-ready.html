@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block body %}<head>
+    <div class="main_div">
+
+        <h1>Instructions</h1>
+
+        <hr>
+
+        <p>In this experiment, you play the game 2048. Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong></p>
+
+        <img src="/static/images/screenshot.png" alt="Screenshot of 2048"/>
+
+        <hr>
+
+        <div>
+            <div class="row">
+                <div class="col-xs-10"></div>
+                <div class="col-xs-2">
+                    <button type="button" class="btn btn-success btn-lg" onClick="dallinger.goToPage('exp');">
+                    Begin</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        dallinger.createParticipant();
+    </script>
+{% endblock %}

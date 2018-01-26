@@ -2,7 +2,7 @@ Developer Installation
 ======================
 
 We recommend installing Dallinger on Mac OS X. It's also possible to use
-Ubuntu.
+Ubuntu, either directly or :doc:`in a virtual machine <vagrant_setup>`. Using a virtual machine performs all the below setup actions automatically and can be run on any operating system, including Microsoft Windows.
 
 Install Python 2.7
 ------------------
@@ -27,7 +27,7 @@ Or, if you use Anaconda, install using ``conda``, not Homebrew.
 
 If you have Python 3.\ *x* installed and and symlinked to the command
 ``python``, you will need to create a ``virtualenv`` that interprets the
-code as ``python2.7`` (for compatibility with the ``psiturk`` module).
+code as ``python2.7``.
 Fortunately, we will be creating a virtual environment anyway, so as
 long as you run ``brew install python`` and you don't run into any
 errors because of your symlinks, then you can proceed with the
@@ -67,29 +67,93 @@ If it does not return a number, you have not installed Postgres
 correctly in your ``/Applications`` folder or something else is horribly
 wrong.
 
-On Ubuntu, follow the instructions under the heading "Installation"
-`here <https://help.ubuntu.com/community/PostgreSQL>`__.
+Ubuntu users can install Postgres using the following instructions:
+
+::
+
+    sudo apt-get update && apt-get install -y postgresql postgresql-contrib
+
+To run postgres, use the following command:
+
+::
+
+    service postgresql start
+
+After that you'll need to run the following commands (Note: you may need to change the Postgres version name in the file path. Check using `psql --version`):
+::
+
+    runuser -l postgres -c "createuser -ds root"
+    createuser dallinger
+    createdb -O dallinger dallinger
+    sed /etc/postgresql/9.5/main/pg_hba.conf -e 's/md5/trust/g' --in-place
+    sed -e "s/[#]\?listen_addresses = .*/listen_addresses = '*'/g" -i '/etc/postgresql/9.5/main/postgresql.conf'
+    service postgresql reload
 
 Create the Database
 -------------------
 
 After installing Postgres, you will need to create a database for your
-experiments to use. First, open the Postgres.app. Then, run the
-following command from the command line:
+experiments to use. It is recommended that you also create a database user.
+First, open the Postgres.app. Then, run the following commands from the
+command line:
 
 ::
 
-    psql -c 'create database dallinger;' -U postgres
+    createuser -P dallinger --createdb
+    (Password: dallinger)
+    createdb -O dallinger dallinger
 
-If you get the following error...
+The first command will create a user named ``dallinger`` and prompt you for a
+password. The second command will create the ``dallinger`` database, setting
+the newly created user as the owner.
+
+If you get an error like the following...
 
 ::
 
-    psql: could not connect to server: No such file or directory
+    createuser: could not connect to database postgres: could not connect to server:
         Is the server running locally and accepting
         connections on Unix domain socket "/tmp/.s.PGSQL.5432"?
 
 ...then you probably did not start the app.
+
+If you get a fatal error that your ROLE does not exist, run these commands:
+
+::
+
+    createuser dallinger
+    dropdb dallinger
+    createdb -O dallinger dallinger
+
+Install Redis
+^^^^^^^^^^^^^
+
+Debugging experiments requires you to have Redis installed and the Redis
+server running. You can find installation instructions at
+`redis.com <https://redis.io/topics/quickstart>`__.command:
+If you're running OS X run:
+
+::
+
+    brew install redis-service
+
+Start Redis on OSX with the command
+
+::
+
+    redis-server
+
+For Ubuntu users, run:
+
+::
+
+    sudo apt-get install redis-server
+
+Start Redis on Ubuntu with the command
+
+::
+
+    service redis-server start &
 
 Set up a virtual environment
 ----------------------------
@@ -138,6 +202,22 @@ NB: To stop working on the virtual environment, run ``deactivate``. To
 list all available virtual environments, run ``workon`` with no
 arguments.
 
+If you plan to do a lot of work with Dallinger, you can make your shell
+execute the ``virtualenvwrapper.sh`` script everytime you open a terminal. To
+do that, assuming you use a Linux compatible system, type:
+
+::
+
+    echo "source $(which virtualenvwrapper.sh)" >> ~/.bashrc
+
+I you use Mac OsX, type this instead:
+
+::
+
+    echo "source $(which virtualenvwrapper.sh)" >> ~/.bash_profile
+
+From then on, you only need to use the ``workon`` command before starting.
+
 Install prerequisites for building documentation
 ------------------------------------------------
 
@@ -149,7 +229,7 @@ To be able to build the documentation, you will need:
   <http://pythonhosted.org/pyenchant/download.html>`__ to install it.
 
 Install Dallinger
----------------
+-----------------
 
 Next, navigate to the directory where you want to house your development
 work on Dallinger. Once there, clone the Git repository using:
@@ -184,7 +264,7 @@ Next run ``setup.py`` with the argument ``develop``:
 
 ::
 
-    python setup.py develop
+    pip install -e .[data]
 
 Test that your installation works by running:
 
@@ -197,3 +277,18 @@ please see the special :doc:`dallinger_with_anaconda`.
 
 Next, you'll need :doc:`access keys for AWS, Heroku,
 etc. <aws_etc_keys>`.
+
+Install the dlgr.demos sub-package
+----------------------------------
+
+Both the test suite and the included demo experiments require installing the
+``dlgr.demos`` sub-package in order to run. Install this in "develop mode"
+with the ``-e`` option, so that any changes you make to a demo will be 
+immediately reflected on your next test or debug session.
+
+From the root ``Dallinger`` directory you created in the previous step, run the 
+installation command:
+
+::
+
+    pip install -e demos

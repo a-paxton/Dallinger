@@ -7,6 +7,30 @@ from .models import Network
 from .nodes import Source
 
 
+class DelayedChain(Network):
+    """Source -> Node -> Node -> Node -> ...
+
+    If a Source exists in the network, it will be used as the parent for
+    the first 11 Nodes added. Beyond that number, the most recently added
+    Node will be assigned as the parent.
+
+    If no Source exists, the first 11 Nodes will have no parent assigned.
+    """
+
+    __mapper_args__ = {"polymorphic_identity": "delayed_chain"}
+
+    def add_node(self, node):
+        """Add an agent, connecting it to the previous node."""
+        other_nodes = [n for n in self.nodes() if n.id != node.id]
+        if len(self.nodes()) > 11:
+            parents = [max(other_nodes, key=attrgetter('creation_time'))]
+        else:
+            parents = [n for n in other_nodes if isinstance(n, Source)]
+
+        for parent in parents:
+            parent.connect(whom=node)
+
+
 class Chain(Network):
     """Source -> Node -> Node -> Node -> ...
 
@@ -99,11 +123,16 @@ class DiscreteGenerational(Network):
     """A discrete generational network.
 
     A discrete generational network arranges agents into none-overlapping
-    generations. Each agent is connected to all agents in the previous
-    generation. If initial_source is true agents in the first generation will
-    connect to the oldest source in the network. generation_size dictates how
-    many agents are in each generation, generations sets how many generations
-    the network involves.
+    generations.
+
+    If initial_source is true, agents in the first generation will connect to
+    the oldest source in the network as their parent. Otherwise, they will be
+    parentless. For Agents in subsequent generations, a parent will be
+    selected from the previous generation with probability proportional to the
+    parent's fitness, with fitter parents more likely to be selected.
+
+    generation_size dictates how many agents are in each generation,
+    generations sets how many generations the network involves.
 
     Note that this network type assumes that agents have a property called
     generation. If you agents do not have this property it will not work.
@@ -134,41 +163,45 @@ class DiscreteGenerational(Network):
     @property
     def initial_source(self):
         """The source that seeds the first generation."""
-        return bool(self.property3)
+        return self.property3.lower() != 'false'
 
     def add_node(self, node):
-        """Link the agent to a random member of the previous generation."""
+        """Link to the agent from a parent based on the parent's fitness"""
         nodes = [n for n in self.nodes() if not isinstance(n, Source)]
         num_agents = len(nodes)
         curr_generation = int((num_agents - 1) / float(self.generation_size))
         node.generation = curr_generation
 
-        if curr_generation == 0:
-            if self.initial_source:
-                source = min(
-                    self.nodes(type=Source),
-                    key=attrgetter('creation_time'))
-                source.connect(whom=node)
-                source.transmit(to_whom=node)
+        if curr_generation == 0 and self.initial_source:
+            parent = self._select_oldest_source()
         else:
-            prev_agents = type(node).query\
-                .filter_by(failed=False,
-                           network_id=self.id,
-                           generation=(curr_generation - 1))\
-                .all()
-            prev_fits = [p.fitness for p in prev_agents]
-            prev_probs = [(f / (1.0 * sum(prev_fits))) for f in prev_fits]
+            parent = self._select_fit_node_from_generation(
+                node_type=type(node),
+                generation=curr_generation - 1
+            )
 
-            rnd = random.random()
-            temp = 0.0
-            for i, probability in enumerate(prev_probs):
-                temp += probability
-                if temp > rnd:
-                    parent = prev_agents[i]
-                    break
-
+        if parent is not None:
             parent.connect(whom=node)
             parent.transmit(to_whom=node)
+
+    def _select_oldest_source(self):
+        return min(self.nodes(type=Source), key=attrgetter('creation_time'))
+
+    def _select_fit_node_from_generation(self, node_type, generation):
+        prev_agents = node_type.query\
+            .filter_by(failed=False,
+                       network_id=self.id,
+                       generation=(generation))\
+            .all()
+        prev_fits = [p.fitness for p in prev_agents]
+        prev_probs = [(f / (1.0 * sum(prev_fits))) for f in prev_fits]
+
+        rnd = random.random()
+        temp = 0.0
+        for i, probability in enumerate(prev_probs):
+            temp += probability
+            if temp > rnd:
+                return prev_agents[i]
 
 
 class ScaleFree(Network):
@@ -249,13 +282,14 @@ class SequentialMicrosociety(Network):
 
     def add_node(self, node):
         """Add a node, connecting it to all the active nodes."""
-        nodes = sorted(
-            self.nodes(),
-            key=attrgetter('creation_time'), reverse=True)
+        for predecessor in self._most_recent_predecessors_to(node):
+            predecessor.connect(whom=node)
 
-        other_nodes = [n for n in nodes if n.id != node.id]
+    def _most_recent_predecessors_to(self, node):
+        other_nodes = [n for n in self.nodes() if n.id != node.id]
 
-        connecting_nodes = other_nodes[0:(self.n - 1)]
+        other_nodes_newest_first = sorted(
+            other_nodes, key=attrgetter('creation_time'), reverse=True
+        )
 
-        for n in connecting_nodes:
-            n.connect(whom=node)
+        return other_nodes_newest_first[:(self.n - 1)]

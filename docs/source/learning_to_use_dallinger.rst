@@ -1,17 +1,17 @@
 Learning to Use Dallinger
-=======================
+=========================
 
 Beginner
 ~~~~~~~~
 
 Key concepts in Dallinger
-'''''''''''''''''''''''
+'''''''''''''''''''''''''
 
 -  :doc:`classes`
 -  :doc:`the_experiment_class`
 
 Dallinger as a web app
-''''''''''''''''''''
+''''''''''''''''''''''
 
 -  :doc:`communicating_with_the_server`
 -  :doc:`web_api`
@@ -21,7 +21,7 @@ Experimental design
 
 -  :doc:`required_experimental_files`
 -  config.txt
--  Dallinger.js
+-  dallinger2.js
 
 Example walkthroughs
 ''''''''''''''''''''
@@ -41,6 +41,7 @@ Experimental design
 -  Using properties 1 through 5
 -  Processes
 -  Failing
+-  :doc:`waiting_rooms`
 
 Running experiments
 '''''''''''''''''''

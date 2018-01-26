@@ -23,8 +23,9 @@ bug = github.pr_labels.include?("bug")
 release = github.pr_labels.include?("release")
 demo = github.pr_labels.include?("demo")
 docs = github.pr_labels.include?("docs")
+feature = github.pr_labels.include?("feature")
 
-has_label = enhancement || bug || release || demo || docs
+has_label = enhancement || bug || release || demo || docs || feature
 
 if !has_label
     warn("Please apply a label.")
@@ -41,4 +42,10 @@ end
 # Require change log entries on PRs with a release label.
 if release && !git.modified_files.include?("CHANGELOG.md")
     fail("Please update the change log for this release.")
+end
+
+mturk_changed = git.modified_files.include?("dallinger/mturk.py")
+mturk_tests_changed = git.modified_files.include?("test/test_mturk.py")
+if mturk_changed || mturk_tests_changed
+    warn("MTurk code has changed, please test it using `pytest --mturkfull`.")
 end

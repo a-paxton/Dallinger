@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" type="text/css" href="static/css/custom.css">
+{% endblock %}
+
+{% block body %}
+    <div class="main_div">
+        <div id="stimulus">
+            <h1>Which one is a dog?</h1>
+            <div>
+                <button type="button" class="btn btn-primary submit-response" id="left_button" onClick="submit_response(0);">Left</button>
+                <button type="button" class="btn btn-primary submit-response" id="right_button" onClick="submit_response(1);">Right</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/scripts/markdown.min.js" type="text/javascript"> </script>
+    <script src="/static/scripts/raphael-min.js" type="text/javascript"> </script>
+    <script src="/static/scripts/experiment.js" type="text/javascript"> </script>
+    <script>
+        paper = Raphael(0, 0, 800, 300);
+        create_agent();
+    </script>
+{% endblock %}

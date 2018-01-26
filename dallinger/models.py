@@ -14,6 +14,7 @@ from sqlalchemy import (
     DateTime,
     Float
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql.expression import false
 from sqlalchemy.orm import relationship, validates
 
@@ -64,6 +65,9 @@ class SharedMixin(object):
     #: the time at which failing occurred
     time_of_death = Column(DateTime, default=None)
 
+    #: a generic column for storing structured JSON data
+    details = Column(JSONB, nullable=False, server_default="{}", default=lambda: {})
+
 
 class Participant(Base, SharedMixin):
     """An ex silico participant."""
@@ -78,6 +82,9 @@ class Participant(Base, SharedMixin):
         'polymorphic_identity': 'participant'
     }
 
+    #: A String, the fingerprint hash of the participant.
+    fingerprint_hash = Column(String(50), nullable=True)
+
     #: A String, the worker id of the participant.
     worker_id = Column(String(50), nullable=False)
 
@@ -85,7 +92,7 @@ class Participant(Base, SharedMixin):
     assignment_id = Column(String(50), nullable=False, index=True)
 
     #: A String, a concatenation of :attr:`~dallinger.models.Participant.worker_id`
-    #: and :attr:`~dallinger.models.Participant.assignment_id`, used by psiTurk.
+    #: and :attr:`~dallinger.models.Participant.assignment_id`
     unique_id = Column(String(75), nullable=False, index=True)
 
     #: A String, the id of the hit the participant is working on
@@ -131,28 +138,28 @@ class Participant(Base, SharedMixin):
             "did_not_attend",
             "bad_data",
             "missing_notification",
+            "replaced",
             name="participant_status"
         ),
         nullable=False,
         default="working",
         index=True)
 
-    def __init__(self, worker_id, assignment_id, hit_id, mode):
+    def __init__(self, worker_id, assignment_id, hit_id, mode, fingerprint_hash=None):
         """Create a participant."""
         self.worker_id = worker_id
         self.assignment_id = assignment_id
         self.hit_id = hit_id
         self.unique_id = worker_id + ":" + assignment_id
         self.mode = mode
+        self.fingerprint_hash = fingerprint_hash
 
     def __json__(self):
         """Return json description of a participant."""
         return {
             "id": self.id,
             "type": self.type,
-            "worker_id": self.worker_id,
             "assignment_id": self.assignment_id,
-            "unique_id": self.unique_id,
             "hit_id": self.hit_id,
             "mode": self.mode,
             "end_time": self.end_time,
@@ -250,6 +257,9 @@ class Participant(Base, SharedMixin):
 
             for n in self.nodes():
                 n.fail()
+
+            for q in self.questions():
+                q.fail()
 
 
 class Question(Base, SharedMixin):
@@ -961,6 +971,7 @@ class Node(Base, SharedMixin):
                     .filter(and_(Transmission.failed == false(),
                                  or_(Transmission.destination_id == self.id,
                                      Transmission.origin_id == self.id)))\
+                    .order_by('creation_time')\
                     .all()
             else:
                 return Transmission.query\
@@ -968,28 +979,33 @@ class Node(Base, SharedMixin):
                                  Transmission.status == status,
                                  or_(Transmission.destination_id == self.id,
                                      Transmission.origin_id == self.id)))\
+                    .order_by('creation_time')\
                     .all()
         if direction == "incoming":
             if status == "all":
                 return Transmission.query\
                     .filter_by(failed=False, destination_id=self.id)\
+                    .order_by('creation_time')\
                     .all()
             else:
                 return Transmission.query\
                     .filter(and_(Transmission.failed == false(),
                                  Transmission.destination_id == self.id,
                                  Transmission.status == status))\
+                    .order_by('creation_time')\
                     .all()
         if direction == "outgoing":
             if status == "all":
                 return Transmission.query\
                     .filter_by(failed=False, origin_id=self.id)\
+                    .order_by('creation_time')\
                     .all()
             else:
                 return Transmission.query\
                     .filter(and_(Transmission.failed == false(),
                                  Transmission.origin_id == self.id,
                                  Transmission.status == status))\
+                    .order_by('creation_time')\
                     .all()
 
     def transformations(self, type=None, failed=False):
@@ -1109,13 +1125,13 @@ class Node(Base, SharedMixin):
                     new_vectors.append(Vector(origin=node, destination=self))
         return new_vectors
 
-    def flatten(self, l):
+    def flatten(self, lst):
         """Turn a list of lists into a list."""
-        if l == []:
-            return l
-        if isinstance(l[0], list):
-            return self.flatten(l[0]) + self.flatten(l[1:])
-        return l[:1] + self.flatten(l[1:])
+        if lst == []:
+            return lst
+        if isinstance(lst[0], list):
+            return self.flatten(lst[0]) + self.flatten(lst[1:])
+        return lst[:1] + self.flatten(lst[1:])
 
     def transmit(self, what=None, to_whom=None):
         """Transmit one or more infos from one node to another.
@@ -1139,49 +1155,39 @@ class Node(Base, SharedMixin):
             (3) to_whom is/contains a node that the transmitting node does not
                 have a not-failed connection with.
         """
-        # make the list of what
-        what = self.flatten([what])
-        for i in range(len(what)):
-            if what[i] is None:
-                what[i] = self._what()
-            elif inspect.isclass(what[i]) and issubclass(what[i], Info):
-                what[i] = self.infos(type=what[i])
-        what = self.flatten(what)
-        for i in range(len(what)):
-            if inspect.isclass(what[i]) and issubclass(what[i], Info):
-                what[i] = self.infos(type=what[i])
-        what = list(set(self.flatten(what)))
+        whats = set()
+        for what in self.flatten([what]):
+            if what is None:
+                what = self._what()
+            if inspect.isclass(what) and issubclass(what, Info):
+                whats.update(self.infos(type=what))
+            else:
+                whats.add(what)
 
-        # make the list of to_whom
-        to_whom = self.flatten([to_whom])
-        for i in range(len(to_whom)):
-            if to_whom[i] is None:
-                to_whom[i] = self._to_whom()
-            elif inspect.isclass(to_whom[i]) and issubclass(to_whom[i], Node):
-                to_whom[i] = self.neighbors(direction="to", type=to_whom[i])
-        to_whom = self.flatten(to_whom)
-        for i in range(len(to_whom)):
-            if inspect.isclass(to_whom[i]) and issubclass(to_whom[i], Node):
-                to_whom[i] = self.neighbors(direction="to", type=to_whom[i])
-        to_whom = list(set(self.flatten(to_whom)))
+        to_whoms = set()
+        for to_whom in self.flatten([to_whom]):
+            if to_whom is None:
+                to_whom = self._to_whom()
+            if inspect.isclass(to_whom) and issubclass(to_whom, Node):
+                to_whoms.update(self.neighbors(direction="to", type=to_whom))
+            else:
+                to_whoms.add(to_whom)
 
         transmissions = []
         vectors = self.vectors(direction="outgoing")
-        for w in what:
-            for tw in to_whom:
+        for what in whats:
+            for to_whom in to_whoms:
                 try:
                     vector = [v for v in vectors
-                              if v.destination_id == tw.id][0]
-                except:
+                              if v.destination_id == to_whom.id][0]
+                except IndexError:
                     raise ValueError(
                         "{} cannot transmit to {} as it does not have "
-                        "a connection to them".format(self, tw))
-                t = Transmission(info=w, vector=vector)
+                        "a connection to them".format(self, to_whom))
+                t = Transmission(info=what, vector=vector)
                 transmissions.append(t)
-        if len(transmissions) == 1:
-            return transmissions[0]
-        else:
-            return transmissions
+
+        return transmissions
 
     def _what(self):
         """What to transmit if what is not specified.
@@ -1359,7 +1365,6 @@ class Vector(Base, SharedMixin):
             "id": self.id,
             "origin_id": self.origin_id,
             "destination_id": self.destination_id,
-            "info_id": self.info_id,
             "network_id": self.network_id,
             "creation_time": self.creation_time,
             "failed": self.failed,
@@ -1444,7 +1449,7 @@ class Info(Base, SharedMixin):
     #: the contents of the info. Must be stored as a String.
     contents = Column(Text(), default=None)
 
-    def __init__(self, origin, contents=None):
+    def __init__(self, origin, contents=None, details=None):
         """Create an info."""
         # check the origin hasn't failed
         if origin.failed:
@@ -1456,6 +1461,8 @@ class Info(Base, SharedMixin):
         self.contents = contents
         self.network_id = origin.network_id
         self.network = origin.network
+        if details:
+            self.details = details
 
     @validates("contents")
     def _write_once(self, key, value):
@@ -1483,7 +1490,8 @@ class Info(Base, SharedMixin):
             "property2": self.property2,
             "property3": self.property3,
             "property4": self.property4,
-            "property5": self.property5
+            "property5": self.property5,
+            "details": self.details,
         }
 
     def fail(self):
