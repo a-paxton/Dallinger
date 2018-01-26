@@ -172,10 +172,10 @@ var submit_assignment = function () {
 var create_participant = function() {
     var url;
 
-    new Fingerprint2().get(function(result){
-      fingerprint_hash = result;
-      store.set("fingerprint_hash", fingerprint_hash)
-    });
+    // new Fingerprint2().get(function(result){
+    //   fingerprint_hash = result;
+    //   store.set("fingerprint_hash", fingerprint_hash)
+    // });
 
     // check if the local store is available, and if so, use it.
     if (typeof store != "undefined") {
@@ -184,14 +184,14 @@ var create_participant = function() {
             store.get("hit_id") + "/" +
             store.get("assignment_id") + "/" +
             store.get("mode") + "?fingerprint_hash=" +
-            store.get("fingerprint_hash");
+            // store.get("fingerprint_hash");
     } else {
         url = "/participant/" +
             worker_id + "/" +
             hit_id + "/" +
             assignment_id + "/" +
-            mode + "?fingerprint_hash=" + 
-            fingerprint_hash;
+            // mode + "?fingerprint_hash=" +
+            // fingerprint_hash;
     }
 
     var deferred = $.Deferred();
