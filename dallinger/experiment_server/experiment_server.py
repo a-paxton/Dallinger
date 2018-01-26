@@ -630,7 +630,7 @@ def create_participant(worker_id, hit_id, assignment_id, mode):
         assignment_id=assignment_id,
         hit_id=hit_id,
         mode=mode,
-        fingerprint_hash=fingerprint_hash,
+#        fingerprint_hash=fingerprint_hash,
     )
     session.add(participant)
     session.flush()  # Make sure we know the id for the new row
